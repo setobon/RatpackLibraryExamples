@@ -1,27 +1,15 @@
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.codec.http.HttpResponseStatus;
+
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
-import ratpack.error.ServerErrorHandler;
-import ratpack.handling.Context;
-import ratpack.http.Response;
 import ratpack.http.client.ReceivedResponse;
-import ratpack.http.internal.HttpHeaderConstants;
 import ratpack.sse.ServerSentEvents;
-import ratpack.sse.internal.ServerSentEventEncoder;
-import ratpack.stream.Streams;
 import ratpack.test.embed.EmbeddedApp;
 import ratpack.websocket.WebSockets;
-
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.joining;
-import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static ratpack.http.ResponseChunks.stringChunks;
 import static ratpack.sse.ServerSentEvents.serverSentEvents;
@@ -30,7 +18,7 @@ import static ratpack.stream.Streams.periodically;
 public class MainTest {
 
     /*@Test
-    public void render(Context context) throws Exception {
+    public void backPressure(Context context) throws Exception {
         ByteBufAllocator bufferAllocator = context.get(ByteBufAllocator.class);
 
         Response response = context.getResponse();
@@ -43,12 +31,16 @@ public class MainTest {
     }*/
 
     @Test
-    public void webSocketsTest() throws Exception {
-        EmbeddedApp.fromHandler( context -> {
-            Publisher<String> stream = periodically(context, Duration.ofSeconds(1), i ->
-                    i < 5 ? i.toString() : null
+    public void responseChunksTest() throws Exception {
+        EmbeddedApp.fromHandler(ctx -> {
+            Publisher<String> strings = periodically(ctx, Duration.ofMillis(10),
+                    i -> i < 5 ? i.toString() : null
             );
-            WebSockets.websocketBroadcast(context, stream);
+
+            ctx.render(stringChunks(strings));
+        }).test(httpClient -> {
+            System.out.println(httpClient.getText());
+            assertEquals("01234", httpClient.getText());
         });
     }
 
@@ -84,16 +76,12 @@ public class MainTest {
     }
 
     @Test
-    public void responseChunksTest() throws Exception {
-        EmbeddedApp.fromHandler(ctx -> {
-            Publisher<String> strings = periodically(ctx, Duration.ofMillis(10),
-                    i -> i < 5 ? i.toString() : null
+    public void webSocketsTest() throws Exception {
+        EmbeddedApp.fromHandler( context -> {
+            Publisher<String> stream = periodically(context, Duration.ofSeconds(1), i ->
+                    i < 5 ? i.toString() : null
             );
-
-            ctx.render(stringChunks(strings));
-        }).test(httpClient -> {
-            System.out.println(httpClient.getText());
-            assertEquals("01234", httpClient.getText());
+            WebSockets.websocketBroadcast(context, stream);
         });
     }
 }
