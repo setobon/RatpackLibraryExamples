@@ -17,19 +17,6 @@ import static ratpack.stream.Streams.periodically;
 
 public class MainTest {
 
-    /*@Test
-    public void backPressure(Context context) throws Exception {
-        ByteBufAllocator bufferAllocator = context.get(ByteBufAllocator.class);
-
-        Response response = context.getResponse();
-        response.getHeaders().add(HttpHeaderConstants.CONTENT_TYPE, HttpHeaderConstants.TEXT_EVENT_STREAM_CHARSET_UTF_8);
-        response.getHeaders().add(HttpHeaderConstants.TRANSFER_ENCODING, HttpHeaderConstants.CHUNKED);
-        response.getHeaders().add(HttpHeaderConstants.CACHE_CONTROL, HttpHeaderConstants.NO_CACHE_FULL);
-        response.getHeaders().add(HttpHeaderConstants.PRAGMA, HttpHeaderConstants.NO_CACHE);
-
-        response.sendStream(Streams.map(publisher, i -> ServerSentEventEncoder.INSTANCE.encode(i, bufferAllocator)));
-    }*/
-
     @Test
     public void responseChunksTest() throws Exception {
         EmbeddedApp.fromHandler(ctx -> {
@@ -67,21 +54,7 @@ public class MainTest {
                     + "\n";
 
             System.out.println(httpClient.get().getBody().getText());
-            /*System.out.println(response.getHeaders().get("Content-Type"));
-            System.out.println("ESPERADO: " + expectedOutput);
-            System.out.println("RESPONSE: " + response.getBody().getText());*/
-
             assertEquals(expectedOutput, response.getBody().getText());
-        });
-    }
-
-    @Test
-    public void webSocketsTest() throws Exception {
-        EmbeddedApp.fromHandler( context -> {
-            Publisher<String> stream = periodically(context, Duration.ofSeconds(1), i ->
-                    i < 5 ? i.toString() : null
-            );
-            WebSockets.websocketBroadcast(context, stream);
         });
     }
 }
